@@ -1,4 +1,4 @@
-from langchain_nvidia_ai_endpoints import ChatNVIDIA
+from . import ChatNVIDIA
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from actions import ActionRegister
 from .model import TOOL_CALL, END_TASK
@@ -6,7 +6,8 @@ from actions.search import search
 from langchain.pydantic_v1 import root_validator
 
 
-NVDA_MODEL = "meta/llama3-8b-instruct"
+# NVDA_MODEL = "meta/llama3-8b-instruct"
+NVDA_MODEL = "llama3"
 
 
 class ToolCallingNVDA(ChatNVIDIA):
@@ -16,27 +17,13 @@ class ToolCallingNVDA(ChatNVIDIA):
 
     @root_validator(pre=True)
     def initialize_actions(cls, values):
-        values = ChatNVIDIA.validate_client(values)
+        # TODO: validateing is reuqired upon using ChatNVIDIA
+        # values = ChatNVIDIA.validate_client(values)
         tool_name = values.get('tool_name')
         if tool_name:
             # tool_name should be the name of the target python script in the `actions` folder
             values['actions'] = ActionRegister(cls, tool_name)
         return values
-
-
-def create_planning_agent(llm: ChatNVIDIA):
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are a planner, you have to breakdown the following task into feasible subtasks,"
-                "the subtasks should be concise and tackle only one part at a time."
-            ),
-            MessagesPlaceholder(variable_name="messages"),
-        ]
-    )
-
-    return prompt | llm
 
 
 def create_router_agent(llm: ChatNVIDIA):
@@ -112,5 +99,4 @@ def create_search_executor(llm: ToolCallingNVDA):
 llm = ToolCallingNVDA(tool_name="search", model=NVDA_MODEL)
 research_agent = create_search_agent(llm)
 research_executor = create_search_executor(llm)
-planning_agent = create_planning_agent(ChatNVIDIA(model=NVDA_MODEL))
 router_agent = create_router_agent(ChatNVIDIA(model=NVDA_MODEL))
