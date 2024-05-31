@@ -5,3 +5,6 @@
 __pycache__
 
 .vscode
+
+yfinance.cache
+*.db

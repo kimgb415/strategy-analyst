@@ -7,7 +7,7 @@ from pyrate_limiter import Duration, RequestRate, Limiter
 import yfinance as yf
 from datetime import datetime
 from utils.fancy_log import FancyLogger
-from . import MyStrategy
+from .strategy import MyStrategy
 
 LOG = FancyLogger(__name__)
 
@@ -29,7 +29,7 @@ def get_sessioned_ticker_for_symbol(symbol: str) -> yf.Ticker:
 
 def get_stock_data(symbol, start_year: datetime.year):
     start_date = f'{start_year}-01-01'
-    end_date = f'{start_year}-12-31'
+    end_date = datetime.now().strftime('%Y-%m-%d')
     ticker = get_sessioned_ticker_for_symbol(symbol)
     data = ticker.history(start=start_date, end=end_date, interval='1d')
 
@@ -46,7 +46,6 @@ def run_backtest(symbol: str, target_year: datetime.year, cash=10000, commission
     cerebro.addanalyzer(analyzers.DrawDown, _name='drawdown')
     cerebro.addanalyzer(analyzers.Returns, _name='returns')
     cerebro.addanalyzer(analyzers.TradeAnalyzer, _name='trade_analyzer')
-
 
     cerebro.broker.setcash(cash)
     cerebro.broker.setcommission(commission=commission)

@@ -4,6 +4,8 @@ from .nvdia_agent import NVDA_MODEL
 from enum import Enum
 import re
 from pydantic import BaseModel
+from .node import agent_node
+import functools
 
 
 PLANNER_SYSTEM_MESSAGE = """You are a professional coding planner. Given a implementation task, you need to break it down into smaller coding steps.
@@ -51,3 +53,4 @@ def create_planning_agent(llm: ChatNVIDIA):
 
 
 planning_agent = create_planning_agent(ChatNVIDIA(model=NVDA_MODEL))
+planning_node = functools.partial(agent_node, agent=planning_agent, name="planner")

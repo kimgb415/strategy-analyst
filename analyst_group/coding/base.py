@@ -12,7 +12,6 @@ from pydantic import BaseModel, Field
 #   The [ \t]* matches the potential spaces before closing ``` (the spec allows indentation).
 CODE_BLOCK_PATTERN = r"```[ \t]*(\w+)?[ \t]*\r?\n(.*?)\r?\n[ \t]*```"
 
-
 class CodeBlock(BaseModel):
     code: str = Field(description="The code to execute.")
     language: str = Field(description="The language of the code.")

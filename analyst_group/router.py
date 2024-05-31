@@ -1,7 +1,18 @@
 from langgraph.graph import END
 from .model import TOOL_CALL, END_TASK, CONTINUE
+from .coding.code_executor import ExecutorMessage
 
 
+def qa_router(state):
+    messages = state["messages"]
+
+    last_message : ExecutorMessage = messages[-1]
+    
+    if not isinstance(last_message, ExecutorMessage):
+        raise ValueError("The last message sent to QA router is not an ExecutorMessage")
+    
+    return
+    
 
 def router(state):
     # This is the router

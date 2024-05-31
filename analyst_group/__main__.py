@@ -2,7 +2,10 @@ from analyst_group.graph import create_analyst_workflow
 from IPython.display import display, Image
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
-from pprint import pprint
+from pprint import pformat
+from utils.fancy_log import FancyLogger
+
+LOG = FancyLogger(__name__)
 
 load_dotenv()
 
@@ -14,6 +17,7 @@ events = graph.stream(
         "messages": [
             HumanMessage(
                 content="Implement a backtrader strategy class named 'MyStrategy' using indicators and signals."
+                "Do not include the backtesting code. Just provide the strategy class."
             )
         ],
     },
@@ -23,7 +27,5 @@ events = graph.stream(
 
 
 for s in events:
-    pprint(s.items())
-    # print(s)
-    # print("----")
-    pass
+    LOG.info(pformat(s))
+    LOG.info("----------------------")

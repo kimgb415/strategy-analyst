@@ -1,12 +1,10 @@
 from langchain_core.messages import AIMessage, ToolMessage
-from .planner import planning_agent
-from .coder import coding_agent
-from .nvdia_agent import router_agent
 from typing import Annotated, Sequence, TypedDict
 from langchain_core.messages import BaseMessage
 import operator
-import functools
-from pprint import pprint
+
+
+session_config = {"configurable": {"session_id": "dev"}}
 
 
 class AgentState(TypedDict):
@@ -15,10 +13,13 @@ class AgentState(TypedDict):
     sender: str
 
 
+def agent_state_parser(state: AgentState) -> str:
+    return state['messages'][-1]
+
+
 # Helper function to create a node for a given agent
 def agent_node(state: AgentState, agent, name) -> AgentState:
-    result = agent.invoke(state)
-    pprint(result)
+    result = agent.invoke(state, config=session_config)
     # We convert the agent output into a format that is suitable to append to the global state
     if isinstance(result, ToolMessage):
         pass
@@ -31,7 +32,3 @@ def agent_node(state: AgentState, agent, name) -> AgentState:
         sender=name,
     )
 
-
-planning_node = functools.partial(agent_node, agent=planning_agent, name="planner")
-coding_node = functools.partial(agent_node, agent=coding_agent, name="coder")
-router_node = functools.partial(agent_node, agent=router_agent, name="router")
