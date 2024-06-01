@@ -31,3 +31,4 @@ class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], operator.add]
     sender: str
     current_strategy: TradingStrategy = None
+    debugging_count: int = 0

@@ -38,7 +38,8 @@ def process_strategist_node(state: AgentState, chain):
     return AgentState(
         messages=[result],
         sender="Strategist",
-        current_strategy=new_strategy
+        current_strategy=new_strategy,
+        debugging_count=state["debugging_count"]
     )
 
 

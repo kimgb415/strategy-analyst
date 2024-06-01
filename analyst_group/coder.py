@@ -18,6 +18,7 @@ CODER_SYSTEM_MESSAGE_SIDE_NOTES = """Wrap your code in a code block that specifi
     Don't use a code block if it's not intended to be executed by the executor. Don't include multiple code blocks in one response. 
     Suggest the full code instead of partial code or code changes, including the original code. 
 """
+DASHED_LINE = "\n----------------------------------------------\n"
 
 class CodingTask(Enum):
     IMPLEMENT_STRATEGY = "IMPLEMENT_STRATEGY"
@@ -36,7 +37,7 @@ def create_coding_chain(llm, task: CodingTask):
                     'user',
                     "Implement a python backtrader strategy class named 'MyStrategy' based on following description of the target strategy."
                     "Do not include the backtesting code. Just provide the strategy class."
-                    "----------------------------------------------"
+                    f"{DASHED_LINE}"
                     "STRATEGY DESCRIPTION: \n{strategy_description}"
                 )
             ]
@@ -52,9 +53,9 @@ def create_coding_chain(llm, task: CodingTask):
                     "user",
                     "You are a professional problem solver, debug the following code and provide the corrected one."
                     "You should focus on traceback and error messages to identify the issue."
-                    "----------------------------------------------"
+                    f"{DASHED_LINE}"
                     "PROBLEMATIC CODE:\n{code}"
-                    "----------------------------------------------"
+                    f"{DASHED_LINE}"
                     "EXECUTION RESULT:\n{outptus}"
                 )
             ]
@@ -73,12 +74,16 @@ def process_coding_node(state: AgentState, chain, task: CodingTask) -> AgentStat
             {"strategy_description": state["current_strategy"].description},
             config=session_config
         )
+        # reset debugging count
+        state["debugging_count"] = 0
     elif task == CodingTask.DEBUG_STRATEGY:
         last_message : ExecutorMessage = state["messages"][-1]
         result = chain.invoke(
             {"code": state["current_strategy"].code, "outptus": last_message.result.output},
             config=session_config
-        )    
+        )
+        # increment debugging count
+        state["debugging_count"] += 1 
 
 
     # udpate current strategy
@@ -89,7 +94,8 @@ def process_coding_node(state: AgentState, chain, task: CodingTask) -> AgentStat
     return AgentState(
         messages=[AIMessage(content=result, name="coder")],
         sender="coder",
-        current_strategy=state["current_strategy"]
+        current_strategy=state["current_strategy"],
+        debugging_count=state["debugging_count"]
     )
 
 
@@ -103,6 +109,7 @@ def process_QA_node(state: AgentState, chain) -> AgentState:
     result : ExecutorMessage = chain.invoke(state, config=session_config)
     
     if result.result.exit_code == 0:
+        state["current_strategy"].performance = result.result.output
         state["current_strategy"].status = StrategyStatus.PENDING_ANALYSIS
     else:
         state["current_strategy"].status = StrategyStatus.PENDING_DEBUGGING
@@ -110,7 +117,8 @@ def process_QA_node(state: AgentState, chain) -> AgentState:
     return AgentState(
         messages=[result],
         sender="QA",
-        current_strategy=state["current_strategy"]
+        current_strategy=state["current_strategy"],
+        debugging_count=state["debugging_count"]
     )
 
 

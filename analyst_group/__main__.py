@@ -23,7 +23,7 @@ events = graph.stream(
         ],
     },
     # Maximum number of steps to take in the graph
-    {"recursion_limit": 5},
+    {"recursion_limit": 20},
 )
 
 

@@ -1,7 +1,8 @@
-from .model import CONTINUE_EDGE, DEBUGGING_EDGE
+from .model import CONTINUE_EDGE, DEBUGGING_EDGE, FORCE_END_EDGE
 from .coding.code_executor import ExecutorMessage
 from .node import AgentState
 
+MAX_DEBUGGING_COUNT = 5
 
 def qa_router(state: AgentState):
     messages = state["messages"]
@@ -15,3 +16,8 @@ def qa_router(state: AgentState):
         return CONTINUE_EDGE
     else:
         return DEBUGGING_EDGE
+    
+def debugging_router(state: AgentState):
+    if state["debugging_count"] < MAX_DEBUGGING_COUNT:
+        return CONTINUE_EDGE
+    return FORCE_END_EDGE
