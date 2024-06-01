@@ -1,9 +1,9 @@
-from langgraph.graph import END
-from .model import TOOL_CALL, END_TASK, CONTINUE
+from .model import CONTINUE_EDGE, DEBUGGING_EDGE
 from .coding.code_executor import ExecutorMessage
+from .node import AgentState
 
 
-def qa_router(state):
+def qa_router(state: AgentState):
     messages = state["messages"]
 
     last_message : ExecutorMessage = messages[-1]
@@ -11,16 +11,7 @@ def qa_router(state):
     if not isinstance(last_message, ExecutorMessage):
         raise ValueError("The last message sent to QA router is not an ExecutorMessage")
     
-    return
-    
-
-def router(state):
-    # This is the router
-    messages = state["messages"]
-    last_message = messages[-1]
-    if TOOL_CALL in last_message.content:
-        return TOOL_CALL
-    if END_TASK in last_message.content:
-        # Any agent decided the work is done
-        return END
-    return CONTINUE
+    if last_message.result.exit_code == 0:
+        return CONTINUE_EDGE
+    else:
+        return DEBUGGING_EDGE

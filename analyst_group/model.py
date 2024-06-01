@@ -1,3 +1,4 @@
 TOOL_CALL = "TOOL CALL"
 END_TASK = "FINAL ANSWER"
-CONTINUE = "continue"
+CONTINUE_EDGE = "continue"
+DEBUGGING_EDGE = 'debugging'
