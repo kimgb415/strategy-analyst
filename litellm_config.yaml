@@ -1,0 +1,18 @@
+model_list:
+  - model_name: gemini
+    litellm_params:
+      model: "gemini/gemini-1.5-pro-latest"
+      api_base: "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
+      api_key:  "os.environ/GEMINI_API_KEY"
+  - model_name: codegemma
+    litellm_params:
+      model: "ollama/codegemma"
+      api_base: "http://localhost:11434"
+  - model_name: llama3
+    litellm_params:
+      model: "ollama/llama3"
+      api_base: "http://localhost:11434"
+  - model_name: phi3
+    litellm_params:
+      model: "ollama/phi3"
+      api_base: "http://localhost:11434"
