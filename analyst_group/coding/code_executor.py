@@ -1,6 +1,6 @@
 from pathlib import Path
 import subprocess
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.messages.base import BaseMessage
 from typing import Literal, List
 
@@ -13,6 +13,7 @@ class CodeResult(BaseModel):
 class ExecutorMessage(BaseMessage):
     example: bool = False
     type: Literal["code executor"] = "code executor"
+    result: CodeResult
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -26,10 +27,14 @@ class CodeExecutor():
         self.module_path = module_path
         self.timeout = timeout
 
-    def __call__(self, code: str) -> ExecutorMessage:
+    # ignore the *args passed from .invoke()
+    def __call__(self, *args) -> ExecutorMessage:
         code_result = self.execute_code()
 
-        return ExecutorMessage(content=[code_result.model_dump()])
+        return ExecutorMessage(
+            content=[code_result.dict()],
+            result=code_result
+        )
 
     def execute_code(self) -> CodeResult:
         cmd = ["python", '-m', self.module_path]
@@ -44,7 +49,6 @@ class CodeExecutor():
             exit_code = result.returncode
         except subprocess.TimeoutExpired:
             outputs += "\n" + "The code execution timed out."
-            # Same exit code as the timeout command on linux.
             exit_code = 124
 
         return CodeResult(exit_code=exit_code, output="".join(outputs))

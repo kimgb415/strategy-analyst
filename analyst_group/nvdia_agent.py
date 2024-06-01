@@ -6,8 +6,8 @@ from actions.search import search
 from langchain.pydantic_v1 import root_validator
 
 
-# NVDA_MODEL = "meta/llama3-8b-instruct"
-NVDA_MODEL = "llama3"
+NVDA_MODEL = "meta/llama3-8b-instruct"
+# NVDA_MODEL = "llama3"
 
 
 class ToolCallingNVDA(ChatNVIDIA):
