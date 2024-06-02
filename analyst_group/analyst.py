@@ -1,11 +1,11 @@
-from . import ChatNVIDIA
-from .nvdia_agent import NVDA_MODEL
+from . import ChatNVIDIA, NVDA_MODEL
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.messages import AIMessage
 from .node import session_config, AgentState, StrategyStatus
 import functools
+from utils.fancy_log import FancyLogger
 
-
+LOG = FancyLogger(__name__)
 ANALYST_SYSTEM_MESSAGE = """
 You are a professional analyst who is responsible for analyzing the performance of a trading strategy.
 Given the statistics of a trading strategy, you should provide a detailed analysis of the strategy's performance.
@@ -34,6 +34,7 @@ def create_analyst_chain(llm):
 
 
 def process_analyst_node(state: AgentState, chain) -> AgentState:
+    LOG.info("Analyzing backtesting performance")
     result = chain.invoke({
         "strategy_description": state["current_strategy"].description,
         "strategy_performance": state["current_strategy"].performance
@@ -41,7 +42,7 @@ def process_analyst_node(state: AgentState, chain) -> AgentState:
         config=session_config
     )
     result = AIMessage(**result.dict(exclude={"type", "name"}), name="Analyst")
-    state["current_strategy"].status = StrategyStatus.DONE
+    state["current_strategy"].status = StrategyStatus.PENDING_IMPROVEMENT
 
     return AgentState(
         messages=[result],

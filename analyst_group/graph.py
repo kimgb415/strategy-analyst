@@ -1,8 +1,8 @@
 from langgraph.graph import END, StateGraph
-from .router import qa_router, debugging_router
-from .model import CONTINUE_EDGE, DEBUGGING_EDGE, FORCE_END_EDGE
+from .router import qa_router, analyst_router
+from .model import CONTINUE_EDGE, DEBUGGING_EDGE, FORCE_END_EDGE, END_TASK_EDGE
 from .node import AgentState
-from .coder import coding_node, QA_node, debugging_node
+from .coder import coding_node, QA_node
 from .strategist import strategist_node
 from .analyst import analyst_node
 
@@ -20,7 +20,6 @@ def create_analyst_workflow():
     workflow.add_node(STRATEGY_NODE, strategist_node)
     workflow.add_node(CODER_NODE, coding_node)
     workflow.add_node(QA_NODE, QA_node)
-    workflow.add_node(DEBUGGING_NODE, debugging_node)
     workflow.add_node(ANALYST_NODE, analyst_node)
 
     workflow.add_edge(STRATEGY_NODE, CODER_NODE)
@@ -28,13 +27,20 @@ def create_analyst_workflow():
     workflow.add_conditional_edges(
         QA_NODE,
         qa_router,
-        {CONTINUE_EDGE: ANALYST_NODE, DEBUGGING_EDGE: DEBUGGING_NODE}
+        {
+            CONTINUE_EDGE: ANALYST_NODE,
+            DEBUGGING_EDGE: CODER_NODE,
+            FORCE_END_EDGE: END
+        }
     )
     workflow.add_conditional_edges(
-        DEBUGGING_NODE,
-        debugging_router,
-        {CONTINUE_EDGE: QA_NODE, FORCE_END_EDGE: END})
-    workflow.add_edge(ANALYST_NODE, END)
+        ANALYST_NODE,
+        analyst_router,
+        {
+            CONTINUE_EDGE: STRATEGY_NODE,
+            END_TASK_EDGE: END
+        }
+    )
 
 
     workflow.set_entry_point(STRATEGY_NODE)

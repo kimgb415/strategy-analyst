@@ -8,6 +8,7 @@ import yfinance as yf
 from datetime import datetime
 from utils.fancy_log import FancyLogger
 from .strategy import MyStrategy
+from .base import PerformanceMetrics
 
 LOG = FancyLogger(__name__)
 
@@ -60,14 +61,12 @@ def analyze_strategy_result(result):
     returns = result.analyzers.returns.get_analysis()
     trade_analyzer = result.analyzers.trade_analyzer.get_analysis()
 
-    # pprint(trade_analyzer)
 
-    LOG.info(f"Sharpe Ratio: {sharpe['sharperatio']}")
-    LOG.info(f"Max Drawdown: {drawdown.max.drawdown}")
-    LOG.info(f"Annual Return: {returns['rnorm100']}")
-    if trade_analyzer.get('total'):
-        LOG.info(f"Total Trades: {trade_analyzer.total.total}")
-    if trade_analyzer.get('won'):
-        LOG.info(f"Winning Trades: {trade_analyzer.won.total}")
-    if trade_analyzer.get('lost'):
-        LOG.info(f"Losing Trades: {trade_analyzer.lost.total}")
+    return PerformanceMetrics(
+        sharpe=sharpe.get('sharperatio', None),
+        drawdown=drawdown.get('max', {}).get('drawdown', None),
+        annual_return=returns['rnorm100'],
+        total_trades=trade_analyzer.get('total', {}).get('total', 0),
+        winning_trades=trade_analyzer.get('won', {}).get('total', 0),
+        losing_trades=trade_analyzer.get('lost', {}).get('total', 0)
+    )

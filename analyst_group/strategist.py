@@ -1,42 +1,82 @@
-from . import ChatNVIDIA
+from . import ChatNVIDIA, NVDA_MODEL
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from .nvdia_agent import NVDA_MODEL
-from .node import AgentState, session_config, TradingStrategy, StrategyStatus, AGENT_STATE_MESSAGE_KEY
+from .node import AgentState, session_config, TradingStrategy, StrategyStatus
 from langchain_core.messages import AIMessage
 import functools
+from enum import Enum
+from utils.fancy_log import FancyLogger
 
-
+LOG = FancyLogger(__name__)
 STRATEGIST_SYSTEM_MESSAGE = """
 You are a professional trader relying ONLY on technical & quantitative analysis of the target company.
 You don't overthink the company's fundamentals, you just focus on the numbers.
+Don't provide any information that is not related to the description of strategy.
 """
 
-
-def create_strategist_chain(llm: ChatNVIDIA):
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                STRATEGIST_SYSTEM_MESSAGE
-            ),
-            MessagesPlaceholder(variable_name="messages"),
-        ]
-    )
-
-    return prompt | llm
+class StrategistTask(Enum):
+    IMPLEMENT_STRATEGY = "IMPLEMENT_STRATEGY"
+    IMPROVE_STRATEGY = "IMPROVE_STRATEGY"
 
 
-def process_strategist_node(state: AgentState, chain):
-    result = chain.invoke(state, config=session_config)
+def get_strategist_prompt(task: StrategistTask):
+    if task == StrategistTask.IMPLEMENT_STRATEGY:
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    STRATEGIST_SYSTEM_MESSAGE
+                ),
+                MessagesPlaceholder(variable_name="messages"),
+            ]
+        )
+    elif task == StrategistTask.IMPROVE_STRATEGY:
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    STRATEGIST_SYSTEM_MESSAGE
+                ),
+                (
+                    "user",
+                    "Based on the critique, improve the original strategy."
+                    "\n----------------------------------------------\n"
+                    "ORIGINAL STRATEGY DESCRIPTION: \n{strategy_description}"
+                    "\n----------------------------------------------\n"
+                    "CRITIQUE: \n{strategy_critique}"
+                )
+            ]
+        )    
+    
+
+    return prompt
+
+
+def process_strategist_node(state: AgentState, llm):
+    if state["current_strategy"] is None:
+        prompt = get_strategist_prompt(StrategistTask.IMPLEMENT_STRATEGY)
+        invoke_input = state
+        LOG.info("Describing a new strategy")
+    elif state["current_strategy"].status == StrategyStatus.PENDING_IMPROVEMENT:
+        prompt = get_strategist_prompt(StrategistTask.IMPROVE_STRATEGY)
+        last_message = state["messages"][-1]
+        invoke_input = {
+                "strategy_description": state["current_strategy"].description, 
+                "strategy_critique": last_message.content
+        }
+        LOG.info("Improving the strategy")
+    
+    chain = prompt | llm
+    chain_response = chain.invoke(invoke_input, config=session_config)
+
     new_strategy = TradingStrategy(
-        description=result.content, 
+        description=chain_response.content, 
         status=StrategyStatus.PENDING_IMPELEMENTATION
     )
-    result = AIMessage(**result.dict(exclude={"type", "name"}), name="Strategist")
+    chain_response = AIMessage(**chain_response.dict(exclude={"type", "name"}), name="Strategist")
     
 
     return AgentState(
-        messages=[result],
+        messages=[chain_response],
         sender="Strategist",
         current_strategy=new_strategy,
         debugging_count=state["debugging_count"]
@@ -45,5 +85,5 @@ def process_strategist_node(state: AgentState, chain):
 
 strategist_node = functools.partial(
     process_strategist_node, 
-    chain=create_strategist_chain(ChatNVIDIA(model=NVDA_MODEL))
+    llm=ChatNVIDIA(model=NVDA_MODEL)
 )

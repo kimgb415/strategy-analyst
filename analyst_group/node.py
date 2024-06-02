@@ -2,6 +2,7 @@ from typing import Annotated, Sequence, TypedDict
 from langchain_core.messages import BaseMessage
 import operator
 from langchain_core.pydantic_v1 import BaseModel, Field
+from backtesting import PerformanceMetrics
 from enum import Enum
 
 
@@ -16,13 +17,14 @@ class StrategyStatus(Enum):
     PENDING_QA = "PENDING_QA"
     PENDING_ANALYSIS = "PENDING_ANALYSIS"
     PENDING_DEBUGGING = "PENDING_DEBUGGING"
+    PENDING_IMPROVEMENT = "PENDING_IMPROVEMENT"
     DONE = "DONE"
 
 
 class TradingStrategy(BaseModel):
     description: str = Field(..., description="Description of the strategy")
     code: str = Field(default=None, description="Python code of the strategy")
-    performance: str = Field(default=None, description="Performance of the strategy after backtesting")
+    performance: PerformanceMetrics = Field(default=None, description="Performance of the strategy after backtesting")
     status : StrategyStatus = StrategyStatus.PENDING_IMPELEMENTATION
 
 

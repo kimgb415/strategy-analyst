@@ -1,6 +1,5 @@
-from . import ChatNVIDIA
+from . import ChatNVIDIA, NVDA_MODEL
 from langchain.prompts import ChatPromptTemplate
-from .nvdia_agent import NVDA_MODEL
 from .coding.code_extractor import PythonCodeExtractor
 from .coding.code_saver import CodeSaver
 from .coding.code_executor import CodeExecutor, ExecutorMessage
@@ -11,6 +10,10 @@ import os
 from .node import StrategyStatus, AgentState, session_config
 import functools
 from enum import Enum
+from backtesting import PerformanceMetrics
+from utils.fancy_log import FancyLogger
+
+LOG = FancyLogger(__name__)
 
 
 CODER_SYSTEM_MESSAGE_SIDE_NOTES = """Wrap your code in a code block that specifies the script type. 
@@ -20,12 +23,13 @@ CODER_SYSTEM_MESSAGE_SIDE_NOTES = """Wrap your code in a code block that specifi
 """
 DASHED_LINE = "\n----------------------------------------------\n"
 
+
 class CodingTask(Enum):
     IMPLEMENT_STRATEGY = "IMPLEMENT_STRATEGY"
     DEBUG_STRATEGY = "DEBUG_STRATEGY"
 
 
-def create_coding_chain(llm, task: CodingTask):
+def get_coding_prompt(task: CodingTask):
     if task == CodingTask.IMPLEMENT_STRATEGY:
         prompt = ChatPromptTemplate.from_messages(
             [
@@ -59,32 +63,38 @@ def create_coding_chain(llm, task: CodingTask):
                     "EXECUTION RESULT:\n{outptus}"
                 )
             ]
-        )   
-    
+        )
 
+    return prompt
+
+
+def create_coding_chain(llm):
     extractor = RunnableLambda(PythonCodeExtractor())
     saver = RunnableLambda(CodeSaver(os.path.join('backtesting', 'strategy.py')))
 
-    return prompt | llm | StrOutputParser() | extractor | saver
+    return llm | StrOutputParser() | extractor | saver
 
 
-def process_coding_node(state: AgentState, chain, task: CodingTask) -> AgentState:
-    if task == CodingTask.IMPLEMENT_STRATEGY:
-        result = chain.invoke(
-            {"strategy_description": state["current_strategy"].description},
-            config=session_config
-        )
+def process_coding_node(state: AgentState, llm) -> AgentState:
+    if state["current_strategy"].status == StrategyStatus.PENDING_IMPELEMENTATION:
+        prompt = get_coding_prompt(CodingTask.IMPLEMENT_STRATEGY)
+        invoke_input = {"strategy_description": state["current_strategy"].description},
         # reset debugging count
         state["debugging_count"] = 0
-    elif task == CodingTask.DEBUG_STRATEGY:
+        LOG.info("Coding task: Implementing strategy")
+    elif state["current_strategy"].status == StrategyStatus.PENDING_DEBUGGING:
+        prompt = get_coding_prompt(CodingTask.DEBUG_STRATEGY)
         last_message : ExecutorMessage = state["messages"][-1]
-        result = chain.invoke(
-            {"code": state["current_strategy"].code, "outptus": last_message.result.output},
-            config=session_config
-        )
+        invoke_input = {
+            "code": state["current_strategy"].code,
+            "outptus": last_message.result.output,
+        }
         # increment debugging count
-        state["debugging_count"] += 1 
+        state["debugging_count"] += 1
+        LOG.info(f"Coding task: Debugging strategy: {state['debugging_count']}th attempt") 
 
+    chain = prompt | create_coding_chain(llm)
+    result = chain.invoke(invoke_input, config=session_config)
 
     # udpate current strategy
     state["current_strategy"].code = result
@@ -109,8 +119,9 @@ def process_QA_node(state: AgentState, chain) -> AgentState:
     result : ExecutorMessage = chain.invoke(state, config=session_config)
     
     if result.result.exit_code == 0:
-        state["current_strategy"].performance = result.result.output
+        state["current_strategy"].performance = PerformanceMetrics.parse_raw(result.result.output)
         state["current_strategy"].status = StrategyStatus.PENDING_ANALYSIS
+        LOG.info("QA passed")
     else:
         state["current_strategy"].status = StrategyStatus.PENDING_DEBUGGING
 
@@ -124,23 +135,10 @@ def process_QA_node(state: AgentState, chain) -> AgentState:
 
 coding_node = functools.partial(
     process_coding_node, 
-    chain=create_coding_chain(
-        ChatNVIDIA(model=NVDA_MODEL),
-        CodingTask.IMPLEMENT_STRATEGY
-    ),
-    task=CodingTask.IMPLEMENT_STRATEGY
+    llm=ChatNVIDIA(model=NVDA_MODEL)
 )
 
 QA_node = functools.partial(
     process_QA_node,
     chain=create_QA_chain(),
-)
-
-debugging_node = functools.partial(
-    process_coding_node,
-    chain=create_coding_chain(
-        ChatNVIDIA(model=NVDA_MODEL),
-        CodingTask.DEBUG_STRATEGY
-    ),
-    task=CodingTask.DEBUG_STRATEGY
 )

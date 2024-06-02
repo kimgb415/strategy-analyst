@@ -23,10 +23,10 @@ events = graph.stream(
         ],
     },
     # Maximum number of steps to take in the graph
-    {"recursion_limit": 20},
+    {"recursion_limit": 13},
 )
 
 
 for s in events:
-    LOG.info(pformat(s))
+    # LOG.info(pformat(s))
     LOG.info("----------------------")

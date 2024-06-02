@@ -1,6 +1,5 @@
-from . import ChatNVIDIA
+from . import ChatNVIDIA, NVDA_MODEL
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from .nvdia_agent import NVDA_MODEL
 from enum import Enum
 import re
 from pydantic import BaseModel

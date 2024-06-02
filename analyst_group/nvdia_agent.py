@@ -1,13 +1,11 @@
 from . import ChatNVIDIA
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from actions import ActionRegister
-from .model import TOOL_CALL, END_TASK
+from .model import TOOL_CALL
 from actions.search import search
 from langchain.pydantic_v1 import root_validator
 
 
-NVDA_MODEL = "meta/llama3-8b-instruct"
-# NVDA_MODEL = "llama3"
 
 
 class ToolCallingNVDA(ChatNVIDIA):
@@ -53,7 +51,7 @@ def create_search_agent(llm: ToolCallingNVDA):
                 " If you are unable to fully answer, that's OK, another assistant with different tools "
                 " will help where you left off. Execute what you can to make progress."
                 " If you or any of the other assistants have the final answer or deliverable,"
-                f" prefix your response with {END_TASK} so the team knows to stop."
+                f" prefix your response with TASK END so the team knows to stop."
                 " If you need to call a tool to help you,"
                 f" prefix your response with {TOOL_CALL} to use a tool."
                 " ## Avaiable tools: ##"
@@ -94,9 +92,3 @@ def create_search_executor(llm: ToolCallingNVDA):
     # chain the serach action
     return prompt | llm | search
 
-
-
-llm = ToolCallingNVDA(tool_name="search", model=NVDA_MODEL)
-research_agent = create_search_agent(llm)
-research_executor = create_search_executor(llm)
-router_agent = create_router_agent(ChatNVIDIA(model=NVDA_MODEL))
