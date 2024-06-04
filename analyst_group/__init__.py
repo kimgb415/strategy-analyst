@@ -8,7 +8,8 @@ import functools
 
 ChatNVIDIA = functools.partial(nvda, temperature=0.3)
 
-NVDA_MODEL = "meta/llama3-8b-instruct"
+NVDA_MODEL = "meta/llama3-70b-instruct"
+# NVDA_MODEL = "meta/llama3-8b-instruct"
 # NVDA_MODEL = "ollama/llama3"
 
 

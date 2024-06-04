@@ -12,6 +12,7 @@ import functools
 from enum import Enum
 from backtesting import PerformanceMetrics
 from utils.fancy_log import FancyLogger
+from pprint import pformat
 
 LOG = FancyLogger(__name__)
 
@@ -55,8 +56,10 @@ def get_coding_prompt(task: CodingTask):
                 ),
                 (
                     "user",
-                    "You are a professional problem solver, debug the following code and provide the corrected one."
-                    "You should focus on traceback and error messages to identify the issue."
+                    "You are currenlty implementing a trading strategy. Based on the output of the backtesting code, "
+                    "provide the corrected code that is error free and sticks to the original strategy description."
+                    f"{DASHED_LINE}"
+                    "STRATEGY DESCRIPTION: \n{strategy_description}"
                     f"{DASHED_LINE}"
                     "PROBLEMATIC CODE:\n{code}"
                     f"{DASHED_LINE}"
@@ -86,6 +89,7 @@ def process_coding_node(state: AgentState, llm) -> AgentState:
         prompt = get_coding_prompt(CodingTask.DEBUG_STRATEGY)
         last_message : ExecutorMessage = state["messages"][-1]
         invoke_input = {
+            "strategy_description": state["current_strategy"].description,
             "code": state["current_strategy"].code,
             "outptus": last_message.result.output,
         }
@@ -122,6 +126,7 @@ def process_QA_node(state: AgentState, chain) -> AgentState:
         state["current_strategy"].performance = PerformanceMetrics.parse_raw(result.result.output)
         state["current_strategy"].status = StrategyStatus.PENDING_ANALYSIS
         LOG.info("QA passed")
+        LOG.info(pformat(state["current_strategy"].performance))
     else:
         state["current_strategy"].status = StrategyStatus.PENDING_DEBUGGING
 

@@ -3,6 +3,7 @@ from IPython.display import display, Image
 from langchain_core.messages import HumanMessage
 from pprint import pformat
 from utils.fancy_log import FancyLogger
+from langgraph.checkpoint.sqlite import SqliteSaver
 import os
 
 LOG = FancyLogger(__name__)
@@ -11,7 +12,9 @@ LOG = FancyLogger(__name__)
 if not os.getenv("NVIDIA_API_KEY", None):
     raise ValueError("NVIDIA_API_KEY is not set in the environment variables.")
 
+memory = SqliteSaver.from_conn_string("graph.db")
 workflow = create_analyst_workflow()
+# graph = workflow.compile(checkpointer=memory)
 graph = workflow.compile()
 
 events = graph.stream(
@@ -23,7 +26,7 @@ events = graph.stream(
         ],
     },
     # Maximum number of steps to take in the graph
-    {"recursion_limit": 13},
+    {"recursion_limit": 50},
 )
 
 
