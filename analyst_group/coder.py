@@ -124,10 +124,14 @@ def process_QA_node(state: AgentState, chain) -> AgentState:
     result : ExecutorMessage = chain.invoke(state, config=session_config)
     
     if result.result.exit_code == 0:
-        state["current_strategy"].performance = PerformanceMetrics.parse_raw(result.result.output)
-        state["current_strategy"].status = StrategyStatus.PENDING_ANALYSIS
-        LOG.info("QA passed")
-        LOG.info(pformat(state["current_strategy"].performance))
+        try:
+            state["current_strategy"].performance = PerformanceMetrics.parse_raw(result.result.output)
+            state["current_strategy"].status = StrategyStatus.PENDING_ANALYSIS
+            LOG.info("QA passed")
+            LOG.info(pformat(state["current_strategy"].performance))
+        except Exception as e:
+            LOG.error(f"Error parsing performance metrics: {e}")
+            state["current_strategy"].status = StrategyStatus.HUMAN_SUPPORT
     else:
         state["current_strategy"].status = StrategyStatus.PENDING_DEBUGGING
 
