@@ -12,9 +12,7 @@ LOG = FancyLogger(__name__)
 if not os.getenv("NVIDIA_API_KEY", None):
     raise ValueError("NVIDIA_API_KEY is not set in the environment variables.")
 
-memory = SqliteSaver.from_conn_string("graph.db")
 workflow = create_analyst_workflow()
-# graph = workflow.compile(checkpointer=memory)
 graph = workflow.compile()
 
 events = graph.stream(
@@ -26,7 +24,7 @@ events = graph.stream(
         ],
     },
     # Maximum number of steps to take in the graph
-    {"recursion_limit": 50},
+    {"recursion_limit": 100},
 )
 
 
