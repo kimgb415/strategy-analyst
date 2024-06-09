@@ -12,8 +12,9 @@ class CodeResult(BaseModel):
 
 class CodeExecutor():
 
-    def __init__(self, module_path: Path, timeout: int = 90):
+    def __init__(self, module_path: Path, args: str = "--qa", timeout: int = 90):
         self.module_path = module_path
+        self.args = args
         self.timeout = timeout
 
     # ignore the *args passed from .invoke()
@@ -25,7 +26,7 @@ class CodeExecutor():
         )
 
     def execute_code(self) -> CodeResult:
-        cmd = ["python", '-m', self.module_path]
+        cmd = ["python", '-m', self.module_path, self.args]
         outputs = []
 
         try:

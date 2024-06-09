@@ -7,13 +7,14 @@ from utils.fancy_log import FancyLogger
 from datetime import datetime
 import os
 from pprint import pformat
+from .base import DASHED_LINE
+from .model import ANALYST_SENDER
 
 LOG = FancyLogger(__name__)
 ANALYST_SYSTEM_MESSAGE = """
 You are a professional analyst who is responsible for analyzing the performance of a trading strategy.
 Given the statistics of a trading strategy, you should provide a detailed analysis of the strategy's performance.
 """
-DASHED_LINE = "\n----------------------------------------------\n"
 
 def generate_analysis_report(state: AgentState, analysis: str):
     report = f"""# Strategy Description:
@@ -70,11 +71,10 @@ def process_analyst_node(state: AgentState, chain) -> AgentState:
     result = AIMessage(**result.dict(exclude={"type", "name"}), name="Analyst")
     state["current_strategy"].status = StrategyStatus.PENDING_IMPROVEMENT
 
-    input("Press Enter to continue...")
 
     return AgentState(
         messages=[result],
-        sender="Analyst",
+        sender=ANALYST_SENDER,
         current_strategy=state["current_strategy"],
         debugging_count=state["debugging_count"]
    )

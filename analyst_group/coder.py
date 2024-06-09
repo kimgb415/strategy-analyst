@@ -10,19 +10,19 @@ import os
 from .node import StrategyStatus, AgentState, session_config
 import functools
 from enum import Enum
-from backtesting import PerformanceMetrics
 from utils.fancy_log import FancyLogger
-from pprint import pformat
+from .base import DASHED_LINE
+from .model import CODER_SENDER, QA_SENDER, HUMAN_SENDER
 
 LOG = FancyLogger(__name__)
+MAX_DEBUGGING_COUNT = 5
 
 
-CODER_SYSTEM_MESSAGE_SIDE_NOTES = """Wrap your code in a code block that specifies the script type. 
+CODER_SYSTEM_MESSAGE = """Wrap your code in a code block that specifies the script type. 
     The user can't modify your code. So do not suggest incomplete code which requires others to modify. 
     Don't use a code block if it's not intended to be executed by the executor. Don't include multiple code blocks in one response. 
     Suggest the full code instead of partial code or code changes, including the original code. 
 """
-DASHED_LINE = "\n----------------------------------------------\n"
 
 
 class CodingTask(Enum):
@@ -36,7 +36,7 @@ def get_coding_prompt(task: CodingTask):
             [
                 (
                     "system",
-                    CODER_SYSTEM_MESSAGE_SIDE_NOTES
+                    CODER_SYSTEM_MESSAGE
                 ),
                 (
                     'user',
@@ -52,7 +52,7 @@ def get_coding_prompt(task: CodingTask):
             [
                 (
                     "system",
-                    CODER_SYSTEM_MESSAGE_SIDE_NOTES
+                    CODER_SYSTEM_MESSAGE
                 ),
                 (
                     "user",
@@ -109,11 +109,11 @@ def process_coding_node(state: AgentState, llm) -> AgentState:
     except Exception as e:
         LOG.error(f"Error processing coding node: {e}")
         result = f"Error processing coding node: {e}"
-        state["current_strategy"].status = StrategyStatus.HUMAN_SUPPORT
+        state["current_strategy"].status |= StrategyStatus.HUMAN_SUPPORT
 
     return AgentState(
         messages=[AIMessage(content=result, name="coder")],
-        sender="coder",
+        sender=CODER_SENDER,
         current_strategy=state["current_strategy"],
         debugging_count=state["debugging_count"]
     )
@@ -129,21 +129,24 @@ def process_QA_node(state: AgentState, chain) -> AgentState:
     result = chain.invoke(state, config=session_config)
     code_result = CodeResult.parse_obj(result.content[0])
     
+    if state["sender"] == HUMAN_SENDER:
+        LOG.debug("Returned from human support. Resetting flags and debugging count.")
+        state["current_strategy"].status &= ~StrategyStatus.HUMAN_SUPPORT
+        state["debugging_count"] = 0
+
     if code_result.exit_code == 0:
-        try:
-            state["current_strategy"].performance = PerformanceMetrics.parse_raw(code_result.output)
-            state["current_strategy"].status = StrategyStatus.PENDING_ANALYSIS
-            LOG.info("QA passed")
-            LOG.info(pformat(state["current_strategy"].performance))
-        except Exception as e:
-            LOG.error(f"Error parsing performance metrics: {e}")
-            state["current_strategy"].status = StrategyStatus.HUMAN_SUPPORT
+        state["current_strategy"].status = StrategyStatus.PENDING_TUNING
+        LOG.info(f"QA passed with output: {code_result.output}")
     else:
+        LOG.debug(f"QA failed with output: {code_result.output}")
         state["current_strategy"].status = StrategyStatus.PENDING_DEBUGGING
+        if state["debugging_count"] >= MAX_DEBUGGING_COUNT:
+            LOG.warning("Debugging count exceeded. Requesting human support")
+            state["current_strategy"].status |= StrategyStatus.HUMAN_SUPPORT
 
     return AgentState(
         messages=[result],
-        sender="QA",
+        sender=QA_SENDER,
         current_strategy=state["current_strategy"],
         debugging_count=state["debugging_count"]
     )

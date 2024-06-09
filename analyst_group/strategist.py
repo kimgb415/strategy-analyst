@@ -5,6 +5,7 @@ from langchain_core.messages import AIMessage
 import functools
 from enum import Enum
 from utils.fancy_log import FancyLogger
+from .model import STRATEGIST_SENDER
 
 LOG = FancyLogger(__name__)
 STRATEGIST_SYSTEM_MESSAGE = """
@@ -77,7 +78,7 @@ def process_strategist_node(state: AgentState, llm):
 
     return AgentState(
         messages=[chain_response],
-        sender="Strategist",
+        sender=STRATEGIST_SENDER,
         current_strategy=new_strategy,
         debugging_count=state["debugging_count"]
     )
