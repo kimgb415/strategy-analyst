@@ -1,24 +1,13 @@
 from pathlib import Path
 import subprocess
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.messages.base import BaseMessage
-from typing import Literal, List
+from langchain_core.messages import AIMessage
+from typing import Literal, Dict, List
 
 
 class CodeResult(BaseModel):
     exit_code: int = Field(description="The exit code of the code execution.")
-
     output: str = Field(description="The output of the code execution.")
-
-class ExecutorMessage(BaseMessage):
-    example: bool = False
-    type: Literal["code executor"] = "code executor"
-    result: CodeResult
-
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["custom", "messages"]
 
 
 class CodeExecutor():
@@ -28,12 +17,11 @@ class CodeExecutor():
         self.timeout = timeout
 
     # ignore the *args passed from .invoke()
-    def __call__(self, *args) -> ExecutorMessage:
+    def __call__(self, *args) -> AIMessage:
         code_result = self.execute_code()
 
-        return ExecutorMessage(
+        return AIMessage(
             content=[code_result.dict()],
-            result=code_result
         )
 
     def execute_code(self) -> CodeResult:

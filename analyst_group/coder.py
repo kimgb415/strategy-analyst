@@ -2,7 +2,7 @@ from . import ChatNVIDIA, NVDA_MODEL
 from langchain.prompts import ChatPromptTemplate
 from .coding.code_extractor import PythonCodeExtractor
 from .coding.code_saver import CodeSaver
-from .coding.code_executor import CodeExecutor, ExecutorMessage
+from .coding.code_executor import CodeExecutor, CodeResult
 from langchain_core.runnables import RunnableLambda
 from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import StrOutputParser
@@ -88,23 +88,28 @@ def process_coding_node(state: AgentState, llm) -> AgentState:
         LOG.info("Coding task: Implementing strategy")
     elif state["current_strategy"].status == StrategyStatus.PENDING_DEBUGGING:
         prompt = get_coding_prompt(CodingTask.DEBUG_STRATEGY)
-        last_message : ExecutorMessage = state["messages"][-1]
+        code_result = CodeResult.parse_obj(state["messages"][-1].content[0])
         invoke_input = {
             "strategy_description": state["current_strategy"].description,
             "code": state["current_strategy"].code,
-            "outptus": last_message.result.output,
+            "outptus": code_result.output,
         }
         # increment debugging count
         state["debugging_count"] += 1
         LOG.info(f"Coding task: Debugging strategy: {state['debugging_count']}th attempt") 
 
     chain = prompt | create_coding_chain(llm)
-    result = chain.invoke(invoke_input, config=session_config)
+    # NOTE: There are times when the code is not properly warpped by LLM
+    try:
+        result = chain.invoke(invoke_input, config=session_config)
 
-    # udpate current strategy
-    state["current_strategy"].code = result
-    state["current_strategy"].status = StrategyStatus.PENDING_QA
-    
+        # udpate current strategy
+        state["current_strategy"].code = result
+        state["current_strategy"].status = StrategyStatus.PENDING_QA
+    except Exception as e:
+        LOG.error(f"Error processing coding node: {e}")
+        result = f"Error processing coding node: {e}"
+        state["current_strategy"].status = StrategyStatus.HUMAN_SUPPORT
 
     return AgentState(
         messages=[AIMessage(content=result, name="coder")],
@@ -121,11 +126,12 @@ def create_QA_chain():
 
 
 def process_QA_node(state: AgentState, chain) -> AgentState:
-    result : ExecutorMessage = chain.invoke(state, config=session_config)
+    result = chain.invoke(state, config=session_config)
+    code_result = CodeResult.parse_obj(result.content[0])
     
-    if result.result.exit_code == 0:
+    if code_result.exit_code == 0:
         try:
-            state["current_strategy"].performance = PerformanceMetrics.parse_raw(result.result.output)
+            state["current_strategy"].performance = PerformanceMetrics.parse_raw(code_result.output)
             state["current_strategy"].status = StrategyStatus.PENDING_ANALYSIS
             LOG.info("QA passed")
             LOG.info(pformat(state["current_strategy"].performance))
