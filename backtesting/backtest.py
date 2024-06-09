@@ -9,6 +9,7 @@ from datetime import datetime
 from utils.fancy_log import FancyLogger
 from .strategy import MyStrategy
 from .base import PerformanceMetrics
+import pandas as pd
 
 LOG = FancyLogger(__name__)
 
@@ -70,3 +71,45 @@ def analyze_strategy_result(result):
         winning_trades=trade_analyzer.get('won', {}).get('total', 0),
         losing_trades=trade_analyzer.get('lost', {}).get('total', 0)
     )
+
+
+def run_backtest_optimization(
+    symbol: str, 
+    target_year: datetime.year, 
+    cash=10000, 
+    commission=0.002
+) -> pd.DataFrame:
+
+    from .params import params_to_optimize
+    cerebro = Cerebro()
+
+    cerebro.optstrategy(MyStrategy, **params_to_optimize)
+    cerebro.adddata(get_stock_data(symbol, target_year))
+
+    cerebro.addanalyzer(analyzers.SharpeRatio, _name='sharpe')
+    cerebro.addanalyzer(analyzers.DrawDown, _name='drawdown')
+    cerebro.addanalyzer(analyzers.Returns, _name='returns')
+    cerebro.addanalyzer(analyzers.TradeAnalyzer, _name='trade_analyzer')
+
+    cerebro.broker.setcash(cash)
+    cerebro.broker.setcommission(commission=commission)
+    result = cerebro.run(maxcpus=12)
+
+
+    param_list = list(result[0][0].params._getkeys())
+    backtest_results = [
+        [
+            *strategy_result[0].params._getvalues(),
+            *analyze_strategy_result(strategy_result[0]).dict().values()
+        ]
+        for strategy_result in result
+    ]
+
+    return pd.DataFrame(
+        backtest_results, 
+        columns=[
+            *param_list,
+            *PerformanceMetrics.__fields__.keys()
+        ]
+    )
+    

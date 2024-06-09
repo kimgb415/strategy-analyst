@@ -1,54 +1,40 @@
 import backtrader as bt
 
 class MyStrategy(bt.Strategy):
-    params = (
-        ('maperiod', 20),  # 20-day moving average
-        ('bbperiod', 20),  # 20-day Bollinger Bands
-        ('bbstddev', 2),  # 2 standard deviations for Bollinger Bands
-        ('maxbbdistance', 2),  # maximum distance from MA20 for long/short entry
-        ('maxdays', 5),  # maximum days without touching MA20 for long/short entry
-        ('exitpct', 0.1),  # 10% profit/loss for exit
-    )
+    params = (('period', 20), ('stddev', 2), ('stop_loss_pct', 0.02), ('take_profit_pct', 0.02), ('risk_pct', 0.02))
 
     def __init__(self):
-        # Initialize moving averages
-        self.moving_avg_20 = bt.indicators.MovingAverageSimple(self.data.close, period=self.p.maperiod)
-        self.moving_avg_50 = bt.indicators.MovingAverageSimple(self.data.close, period=50)
-
-        # Initialize Bollinger Bands
-        self.bb = bt.indicators.BollingerBands(self.data.close, period=self.p.bbperiod, devfactor=self.p.bbstddev)
-
-        # Initialize variables for long/short entry and exit
-        self.long_entry = False
-        self.short_entry = False
-        self.position_size = 0
-
-        # Initialize crossover indicators
-        self.crossover = bt.indicators.CrossOver(self.moving_avg_20, self.data.close)
+        self.data_close = self.datas[0].close
+        self.sma = bt.indicators.SimpleMovingAverage(self.data_close, period=self.params.period)
+        self.stddev = bt.indicators.StandardDeviation(self.data_close, period=self.params.period)
+        self.upper_band = self.sma + (self.stddev * self.params.stddev)
+        self.lower_band = self.sma - (self.stddev * self.params.stddev)
+        self.order = None
+        self.entry_price = None
 
     def next(self):
-        # Check for long entry
-        if not self.long_entry and not self.short_entry:
-            if self.data.close > self.moving_avg_50 and self.data.close > self.bb.top:
-                if self.crossover > 0:
-                    self.long_entry = True
-                    self.position_size = self.broker.getcash() * 0.1  # 10% of cash for long position
+        if self.order:
+            return
 
-        # Check for short entry
-        if not self.long_entry and not self.short_entry:
-            if self.data.close < self.moving_avg_50 and self.data.close < self.bb.mid:
-                if self.crossover < 0:
-                    self.short_entry = True
-                    self.position_size = self.broker.getcash() * 0.1  # 10% of cash for short position
+        if not self.position:
+            if self.data_close[0] <= self.lower_band[0]:
+                self.order = self.buy(exectype=bt.Order.Market)
+                self.entry_price = self.data_close[0]
+            elif self.data_close[0] >= self.upper_band[0]:
+                self.order = self.sell(exectype=bt.Order.Market)
+                self.entry_price = self.data_close[0]
+        else:
+            if self.position.size > 0:
+                if self.data_close[0] >= self.entry_price * (1 + self.params.take_profit_pct):
+                    self.close(exectype=bt.Order.Market)
+                elif self.data_close[0] <= self.entry_price * (1 - self.params.stop_loss_pct):
+                    self.close(exectype=bt.Order.Market)
+            elif self.position.size < 0:
+                if self.data_close[0] <= self.entry_price * (1 - self.params.take_profit_pct):
+                    self.close(exectype=bt.Order.Market)
+                elif self.data_close[0] >= self.entry_price * (1 + self.params.stop_loss_pct):
+                    self.close(exectype=bt.Order.Market)
 
-        # Check for exit
-        if self.position_size > 0:
-            if self.data.close > self.position_size * (1 + self.p.exitpct) or self.data.close < self.position_size * (1 - self.p.exitpct):
-                self.close()
-                self.long_entry = False
-                self.position_size = 0
-        elif self.position_size < 0:
-            if self.data.close < self.position_size * (1 - self.p.exitpct) or self.data.close > self.position_size * (1 + self.p.exitpct):
-                self.close()
-                self.short_entry = False
-                self.position_size = 0
+    def stop(self):
+        # No need to set anything in the stop method
+        pass
