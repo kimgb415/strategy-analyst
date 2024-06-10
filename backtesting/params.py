@@ -1,8 +1,8 @@
 params_to_optimize = dict(
-    period=(20, 30, 40, 50),
-    devfactor=(1.5, 2.0, 2.5, 3.0),
-    stop_loss_pct=(0.02, 0.03, 0.04, 0.05),
-    take_profit_pct=(0.02, 0.03, 0.04, 0.05),
-    max_positions=(3, 4, 5, 6),
-    risk_pct=(0.01, 0.015, 0.02, 0.025),
+    period_ema=(10, 20, 30, 40),
+    period_rsi=(10, 14, 21, 28),
+    std_dev=(1.0, 1.5, 2.0, 2.5),
+    atr_multiplier=(1.0, 1.5, 2.0, 2.5),
+    max_daily_allocation=(0.05, 0.1, 0.15, 0.2),
+    # atr_period=(5, 10, 14, 21)
 )
