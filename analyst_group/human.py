@@ -16,7 +16,11 @@ def process_human_in_the_loop(state: AgentState) -> AgentState:
         state["current_strategy"].status = StrategyStatus.PENDING_QA
     elif state["sender"] == TUNING_SENDER:
         input("Tune the strategy code...")
-        raise NotImplementedError("Human Support for tuning not implemented yet")
+        state["current_strategy"].status = StrategyStatus.PENDING_TUNING
+        with open(os.path.join('backtesting', 'params.py'), 'r') as f:
+            result = f.read()
+        state["current_strategy"].params = result
+        
     else:
         raise ValueError(f"Invalid sender to human edge: {state['sender']}")    
 

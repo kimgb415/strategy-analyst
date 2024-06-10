@@ -12,7 +12,7 @@ from .base import PerformanceMetrics
 import pandas as pd
 
 LOG = FancyLogger(__name__)
-
+INITIAL_CASH = 300
 
 # Cache and rate limit the yahoo finance API
 class CachedLimiterSession(CacheMixin, LimiterMixin, Session):
@@ -38,7 +38,7 @@ def get_stock_data(symbol, start_year: datetime.year):
     return feeds.PandasData(dataname=data)
 
 
-def run_backtest(symbol: str, target_year: datetime.year, cash=10000, commission=0.002):
+def run_backtest(symbol: str, target_year: datetime.year, cash=INITIAL_CASH, commission=0.002):
     cerebro = Cerebro()
 
     cerebro.addstrategy(MyStrategy)
@@ -52,6 +52,8 @@ def run_backtest(symbol: str, target_year: datetime.year, cash=10000, commission
     cerebro.broker.setcash(cash)
     cerebro.broker.setcommission(commission=commission)
     result = cerebro.run()
+
+    cerebro.plot()
 
     return result[0]
 
@@ -76,11 +78,17 @@ def analyze_strategy_result(result):
 def run_backtest_optimization(
     symbol: str, 
     target_year: datetime.year, 
-    cash=10000, 
+    cash=INITIAL_CASH, 
     commission=0.002
 ) -> pd.DataFrame:
 
     from .params import params_to_optimize
+    from itertools import product
+    total_combos = len(list(product(*params_to_optimize.values())))
+    if total_combos > 20000:
+        print(f"parameter combinations exceeded limitation: {total_combos}")
+        exit(-1)
+
     cerebro = Cerebro()
 
     cerebro.optstrategy(MyStrategy, **params_to_optimize)
@@ -93,7 +101,7 @@ def run_backtest_optimization(
 
     cerebro.broker.setcash(cash)
     cerebro.broker.setcommission(commission=commission)
-    result = cerebro.run(maxcpus=12)
+    result = cerebro.run(maxcpus=20)
 
 
     param_list = list(result[0][0].params._getkeys())

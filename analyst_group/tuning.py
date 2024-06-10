@@ -10,21 +10,21 @@ from utils.fancy_log import FancyLogger
 from .node import AgentState, StrategyStatus, session_config
 import functools
 from . import ChatNVIDIA, NVDA_MODEL
-from .model import TUNING_SENDER
+from .model import TUNING_SENDER, QA_SENDER, HUMAN_SENDER
 
 
 TUNING_SYSTEM_MESSAGE = """
 You will be given a backtrader strategy implementaion.
 Read the strategy code carefully and check the parameters that should be tuned.
+You should only provide upto 6 parameters to optimize, with each parameter having upto 4 permutations.
 Provide the definition of `params_to_optimize` and wrap it in python code block. 
-Try not to provide permutations of the parameters more than 1000.
 """
 EXAMPLE_PARAMS_OUTPUT = """
 ```python
 params_to_optimize = dict(
-    ema_period=range(10, 51, 5),
-    sma_period=range(1, 4),
-    atr_period=range(5, 21, 2),
+    ema_period=(10, 20, 30, 40),
+    sma_period=(1, 4, 10, 15),
+    atr_period=(5, 12, 21),
     atr_threshold=(1.0, 2.0, 0.5),
 )
 ```
@@ -55,16 +55,22 @@ def create_tuing_chain(llm):
 
 
 def process_tuning_node(state: AgentState, llm) -> AgentState:
-    invoke_input = {
-        "strategy_code": state["current_strategy"].code,
-    },
+    if state["sender"] == QA_SENDER:
+        invoke_input = {
+            "strategy_code": state["current_strategy"].code,
+        },
 
-    LOG.info(f"Generating params for strategy optimization")
-    chain = create_tuing_chain(llm)
-    param_output = chain.invoke(invoke_input, config=session_config)
-    state["current_strategy"].params = param_output
+        LOG.info(f"Generating params for strategy optimization")
+        chain = create_tuing_chain(llm)
+        param_output = chain.invoke(invoke_input, config=session_config)
+        state["current_strategy"].params = param_output
+    elif state["sender"] == HUMAN_SENDER:
+        # clear human support flag
+        state["current_strategy"].status &= ~StrategyStatus.HUMAN_SUPPORT
+    else:
+        raise ValueError(f"Invalid sender to tuning edge: {state['sender']}")
 
-    LOG.info(f"Optimizing strategy with params:\n{param_output}")
+    LOG.info(f"Optimizing strategy with params:\n{state['current_strategy'].params}")
     executor = RunnableLambda(CodeExecutor('backtesting', args='--opt'))
     result = executor.invoke({}, config=session_config)
 

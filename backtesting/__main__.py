@@ -22,7 +22,7 @@ def main():
         metric = analyze_strategy_result(result)
         print(metric.json(indent=2))
     elif args.opt:
-        opt_df = run_backtest_optimization(SYMBOL, 2020)
+        opt_df = run_backtest_optimization(SYMBOL, 2000)
         opt_df.sort_values('annual_return', ascending=False, inplace=True)
         print(opt_df.iloc[0])
 

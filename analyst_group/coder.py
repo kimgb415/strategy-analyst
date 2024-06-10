@@ -58,7 +58,7 @@ def get_coding_prompt(task: CodingTask):
                     "user",
                     "You are currenlty implementing a trading strategy. Based on the output of the backtesting code, "
                     "provide the corrected code that is error free and sticks to the original strategy description."
-                    "NOTE: When using RSI related indicators, set safediv=True upon initializaiton to prevent division by zero error."
+                    "NOTE: If division by zero error occurs, set safediv=True for the initialization of RSI realted indicator."
                     f"{DASHED_LINE}"
                     "STRATEGY DESCRIPTION: \n{strategy_description}"
                     f"{DASHED_LINE}"

@@ -30,6 +30,11 @@ def generate_analysis_report(state: AgentState, analysis: str):
 ```python
 {state['current_strategy'].code}
 ```
+
+# Parameter Code:
+```python
+{state['current_strategy'].params}
+```
 """
     
     report_file_name = f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}_strategy.md'
