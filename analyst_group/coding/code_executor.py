@@ -12,7 +12,7 @@ class CodeResult(BaseModel):
 
 class CodeExecutor():
 
-    def __init__(self, module_path: Path, args: str = "--qa", timeout: int = 90):
+    def __init__(self, module_path: Path, args: str = "--qa", timeout: int = 360):
         self.module_path = module_path
         self.args = args
         self.timeout = timeout
