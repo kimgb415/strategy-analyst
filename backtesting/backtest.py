@@ -53,8 +53,6 @@ def run_backtest(symbol: str, target_year: datetime.year, cash=INITIAL_CASH, com
     cerebro.broker.setcommission(commission=commission)
     result = cerebro.run()
 
-    cerebro.plot()
-
     return result[0]
 
 
