@@ -1,38 +1,42 @@
 import backtrader as bt
 
 class MyStrategy(bt.Strategy):
-    params = (('period_ema', 20), ('period_rsi', 14), ('std_dev', 1.5), ('atr_multiplier', 1.5),
-              ('max_daily_allocation', 0.1), ('max_weekly_allocation', 0.2), ('daily_loss_limit', 0.015),
-              ('weekly_loss_limit', 0.03), ('monthly_loss_limit', 0.05))
+    params = (
+        ('period_sma', 20),
+        ('period_bb', 20),
+        ('devfactor', 2.0),
+        ('period_rsi', 10),
+        ('rsi_low', 30),
+        ('rsi_high', 70),
+        ('risk_pct', 0.015),
+        ('stop_loss_pct', 0.03),
+        ('max_daily_loss_pct', 0.01)
+    )
 
     def __init__(self):
-        self.ema = bt.ind.EMA(self.data.close, period=self.params.period_ema)
-        self.std_dev = bt.ind.StdDev(self.data.close, period=self.params.period_ema)
-        self.upper_band = self.ema + (self.params.std_dev * self.std_dev)
-        self.lower_band = self.ema - (self.params.std_dev * self.std_dev)
-        self.rsi = bt.ind.RSI(self.data.close, period=self.params.period_rsi, safediv=True)
-        self.atr = bt.ind.ATR(self.data, period=14)
-        self.position_size = 0
+        self.sma = bt.indicators.SimpleMovingAverage(self.data, period=self.params.period_sma)
+        self.bb = bt.indicators.BollingerBands(self.data, period=self.params.period_bb, devfactor=self.params.devfactor)
+        self.rsi = bt.indicators.RelativeStrengthIndex(self.data, period=self.params.period_rsi, safediv=True)
+
+        self.position_size = self.params.risk_pct * self.broker.get_value()
 
     def next(self):
         if self.position.size == 0:
-            if self.data.close < self.lower_band and self.rsi < 30:
-                self.position_size = self.calculate_position_size()
-                self.buy(exectype=bt.Order.Market, size=self.position_size)
-            elif self.data.close > self.upper_band and self.rsi > 70:
-                self.position_size = self.calculate_position_size()
+            if self.rsi < self.params.rsi_low and self.data.close < self.bb.bot:
                 self.sell(exectype=bt.Order.Market, size=self.position_size)
-        else:
-            if self.data.close > self.ema + (self.params.atr_multiplier * self.atr):
-                self.close()
-            elif self.data.close < self.ema - (self.params.atr_multiplier * self.atr):
-                self.close()
+            elif self.rsi > self.params.rsi_high and self.data.close > self.bb.top:
+                self.buy(exectype=bt.Order.Market, size=self.position_size)
 
-    def calculate_position_size(self):
-        volatility = self.atr / self.data.close
-        position_size = (self.params.max_daily_allocation / volatility) * self.broker.getcash()
-        return int(position_size)
+        elif self.position.size > 0:
+            if self.data.close < self.sma or self.rsi < 50:
+                self.close(exectype=bt.Order.Market)
+
+        elif self.position.size < 0:
+            if self.data.close > self.sma or self.rsi > 50:
+                self.close(exectype=bt.Order.Market)
 
     def stop(self):
-        # Implement risk management and performance metrics calculation here
-        pass
+        daily_pnl = self.broker.get_value() - self.broker.startingcash
+        daily_pnl_pct = daily_pnl / self.broker.startingcash
+        if daily_pnl_pct < -self.params.max_daily_loss_pct:
+            self.env.runstop()
