@@ -48,7 +48,7 @@ There are three stages where human interaction is required in Agent workflow
 - `python -m backtesting --avg` will show the average trading performance among other tech giants
 
 # Resources
-Explore more details of the project in blog post: https://gaby-blog.vercel.app/CanLLMAgentMakeMeRich.html
+Explore more details of the project in blog post: https://gaby-blog.vercel.app/CanLLMAgentMakeMeRich.html <br/>
 Watch the demo on YouTube: https://youtu.be/nE7-w8kBfFI?si=sEkrKb2_sHsjQyAy
 
 # Additional Information
