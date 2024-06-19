@@ -3,9 +3,13 @@
 The entire project is tested only in following environment
 - Operating System: Ubuntu 22.04.03 LTS
 - Python: Version 3.10.12
+- Sqlite3: Version 3.37.2
 
 ## Environment Setup
 ```sh
+# Install sqlite3 for LLM response caching
+sudo apt-get install sqlite3
+
 # Create a virtual environment for Python packages
 python -m venv .venv
 source .venv/bin/activate
