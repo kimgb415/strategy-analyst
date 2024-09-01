@@ -31,8 +31,8 @@ def get_sessioned_ticker_for_symbol(symbol: str) -> yf.Ticker:
 
 def get_stock_data(symbol, start_year: datetime.year):
     start_date = f'{start_year}-01-01'
-    # NOTE: to reproduce the LLM response with cache.db, you should fix the end_date to a specific date
-    end_date = datetime.now().strftime('%Y-%m-%d')
+    # NOTE: to reproduce the LLM response with cache.db, must fix the end_date to a specific date
+    end_date = '2024-06-01'
     ticker = get_sessioned_ticker_for_symbol(symbol)
     data = ticker.history(start=start_date, end=end_date, interval='1d')
 

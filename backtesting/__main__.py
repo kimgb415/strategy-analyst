@@ -8,6 +8,7 @@ from .base import PerformanceMetrics
 
 SYMBOL = "AAPL"
 TECH_GIANTS = ['AAPL', 'GOOGL', 'MSFT', 'AMZN']
+START_YEAR = 2024
 
 def calculate_average(metrics: list[PerformanceMetrics]) -> PerformanceMetrics:
     sharpe = sum(m.sharpe for m in metrics if m.sharpe is not None) / len([m for m in metrics if m.sharpe is not None])
@@ -39,17 +40,17 @@ def get_args():
 def main():
     args = get_args()
     if args.qa:
-        result = run_backtest(SYMBOL, 2000)
+        result = run_backtest(SYMBOL, START_YEAR)
         metric = analyze_strategy_result(result)
         print(metric.json(indent=2))
     elif args.opt:
-        opt_df = run_backtest_optimization(SYMBOL, 2000)
+        opt_df = run_backtest_optimization(SYMBOL, START_YEAR)
         opt_df.sort_values('annual_return', ascending=False, inplace=True)
         print(opt_df.iloc[0])
     elif args.avg:
         metrics = []
         for symbol in TECH_GIANTS:
-            result = run_backtest(symbol, 2000)
+            result = run_backtest(symbol, START_YEAR)
             metrics.append(analyze_strategy_result(result))
             print(f"Metrics for {symbol}")
             print(metrics[-1].json(indent=2))
