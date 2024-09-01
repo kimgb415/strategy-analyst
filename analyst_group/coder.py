@@ -1,4 +1,4 @@
-from . import ChatNVIDIA, NVDA_MODEL
+from . import ChatModel, CHAT_MODEL_NAME
 from langchain.prompts import ChatPromptTemplate
 from .coding.code_extractor import PythonCodeExtractor
 from .coding.code_saver import CodeSaver
@@ -154,7 +154,7 @@ def process_QA_node(state: AgentState, chain) -> AgentState:
 
 coding_node = functools.partial(
     process_coding_node, 
-    llm=ChatNVIDIA(model=NVDA_MODEL)
+    llm=ChatModel(model_name=CHAT_MODEL_NAME)
 )
 
 QA_node = functools.partial(

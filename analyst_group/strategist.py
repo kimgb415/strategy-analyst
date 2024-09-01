@@ -1,4 +1,4 @@
-from . import ChatNVIDIA, NVDA_MODEL
+from . import ChatModel, CHAT_MODEL_NAME
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from .node import AgentState, session_config, TradingStrategy, StrategyStatus
 from langchain_core.messages import AIMessage
@@ -86,5 +86,5 @@ def process_strategist_node(state: AgentState, llm):
 
 strategist_node = functools.partial(
     process_strategist_node, 
-    llm=ChatNVIDIA(model=NVDA_MODEL)
+    llm=ChatModel(model_name=CHAT_MODEL_NAME)
 )

@@ -19,7 +19,7 @@ events = graph.stream(
     {
         "messages": [
             HumanMessage(
-                content="Describe a quantitative trading strategy that is consice and simple."
+                content="Describe a quantitative trading strategy that is concise and simple."
             )
         ],
     },

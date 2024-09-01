@@ -9,7 +9,7 @@ import os
 from utils.fancy_log import FancyLogger
 from .node import AgentState, StrategyStatus, session_config
 import functools
-from . import ChatNVIDIA, NVDA_MODEL
+from . import ChatModel, CHAT_MODEL_NAME
 from .model import TUNING_SENDER, QA_SENDER, HUMAN_SENDER
 
 
@@ -91,4 +91,4 @@ def process_tuning_node(state: AgentState, llm) -> AgentState:
     )
 
 
-tuning_node = functools.partial(process_tuning_node, llm=ChatNVIDIA(model=NVDA_MODEL))
+tuning_node = functools.partial(process_tuning_node, llm=ChatModel(model_name=CHAT_MODEL_NAME))
