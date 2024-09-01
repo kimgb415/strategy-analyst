@@ -86,5 +86,5 @@ def process_analyst_node(state: AgentState, chain) -> AgentState:
 
 analyst_node = functools.partial(
     process_analyst_node,
-    chain=create_analyst_chain(ChatModel(model_name=CHAT_MODEL_NAME))
+    chain=create_analyst_chain(ChatModel(model=CHAT_MODEL_NAME))
 )

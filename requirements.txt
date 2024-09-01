@@ -59,7 +59,7 @@ langchain==0.2.1
 langchain-community==0.2.1
 langchain-core==0.2.37
 langchain-experimental==0.0.59
-langchain-nvidia-ai-endpoints==0.1.0
+langchain-nvidia-ai-endpoints==0.2.2
 langchain-openai==0.1.23
 langchain-text-splitters==0.2.0
 langgraph==0.0.55

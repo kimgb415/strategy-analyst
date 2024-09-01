@@ -21,6 +21,7 @@ MAX_DEBUGGING_COUNT = 5
 CODER_SYSTEM_MESSAGE = """Wrap your code in a code block that specifies the script type. 
     The user can't modify your code. So do not suggest incomplete code which requires others to modify. 
     Don't use a code block if it's not intended to be executed by the executor. Don't include multiple code blocks in one response. 
+    Don't include print or logging statements in the code block.
     Suggest the full code instead of partial code or code changes, including the original code. 
 """
 
@@ -154,7 +155,7 @@ def process_QA_node(state: AgentState, chain) -> AgentState:
 
 coding_node = functools.partial(
     process_coding_node, 
-    llm=ChatModel(model_name=CHAT_MODEL_NAME)
+    llm=ChatModel(model=CHAT_MODEL_NAME)
 )
 
 QA_node = functools.partial(

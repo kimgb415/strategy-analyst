@@ -91,4 +91,4 @@ def process_tuning_node(state: AgentState, llm) -> AgentState:
     )
 
 
-tuning_node = functools.partial(process_tuning_node, llm=ChatModel(model_name=CHAT_MODEL_NAME))
+tuning_node = functools.partial(process_tuning_node, llm=ChatModel(model=CHAT_MODEL_NAME))

@@ -8,7 +8,7 @@ from .base import PerformanceMetrics
 
 SYMBOL = "AAPL"
 TECH_GIANTS = ['AAPL', 'GOOGL', 'MSFT', 'AMZN']
-START_YEAR = 2024
+START_YEAR = 2023
 
 def calculate_average(metrics: list[PerformanceMetrics]) -> PerformanceMetrics:
     sharpe = sum(m.sharpe for m in metrics if m.sharpe is not None) / len([m for m in metrics if m.sharpe is not None])

@@ -86,5 +86,5 @@ def process_strategist_node(state: AgentState, llm):
 
 strategist_node = functools.partial(
     process_strategist_node, 
-    llm=ChatModel(model_name=CHAT_MODEL_NAME)
+    llm=ChatModel(model=CHAT_MODEL_NAME)
 )
