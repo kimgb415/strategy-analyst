@@ -1,7 +1,7 @@
 import backtrader as bt
 
 class MyStrategy(bt.Strategy):
-    params = (('bb_period', 20), ('bb_std_dev', 2), ('bb_width_low', 0.05), ('bb_width_high', 0.10), ('position_size', 0.02))
+    params = (('bb_period', 20), ('bb_std_dev', 1.5), ('bb_width_low', 0.07), ('bb_width_high', 0.10), ('position_size', 0.04))
 
     def __init__(self):
         self.data_close = self.datas[0].close
