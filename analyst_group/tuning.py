@@ -36,11 +36,8 @@ def create_tuing_chain(llm):
     prompt = ChatPromptTemplate.from_messages(
         [
             (
-                "system",
-                TUNING_SYSTEM_MESSAGE
-            ),
-            (
                 "user",
+                f"{TUNING_SYSTEM_MESSAGE}"
                 f"{DASHED_LINE}"
                 "STRATEGY CODE: \n```python\n{strategy_code}```"
                 f"{DASHED_LINE}"

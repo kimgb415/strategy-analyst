@@ -36,11 +36,8 @@ def get_coding_prompt(task: CodingTask):
         prompt = ChatPromptTemplate.from_messages(
             [
                 (
-                    "system",
-                    CODER_SYSTEM_MESSAGE
-                ),
-                (
                     'user',
+                    f"{CODER_SYSTEM_MESSAGE}"
                     "Implement a python backtrader strategy class named 'MyStrategy' based on following description of the target strategy."
                     "Do not include the backtesting code. Just provide the strategy class."
                     f"{DASHED_LINE}"
@@ -52,11 +49,8 @@ def get_coding_prompt(task: CodingTask):
         prompt = ChatPromptTemplate.from_messages(
             [
                 (
-                    "system",
-                    CODER_SYSTEM_MESSAGE
-                ),
-                (
                     "user",
+                    f"{CODER_SYSTEM_MESSAGE}"
                     "You are currenlty implementing a trading strategy. Based on the output of the backtesting code, "
                     "provide the corrected code that is error free and sticks to the original strategy description."
                     "NOTE: If division by zero error occurs, set safediv=True for the initialization of RSI realted indicator."

@@ -24,21 +24,18 @@ def get_strategist_prompt(task: StrategistTask):
         prompt = ChatPromptTemplate.from_messages(
             [
                 (
-                    "system",
+                    "user",
                     STRATEGIST_SYSTEM_MESSAGE
                 ),
-                MessagesPlaceholder(variable_name="messages"),
+                # MessagesPlaceholder(variable_name="messages"),
             ]
         )
     elif task == StrategistTask.IMPROVE_STRATEGY:
         prompt = ChatPromptTemplate.from_messages(
             [
                 (
-                    "system",
-                    STRATEGIST_SYSTEM_MESSAGE
-                ),
-                (
                     "user",
+                    f"{STRATEGIST_SYSTEM_MESSAGE}"
                     "Based on the critique, improve the original strategy."
                     "\n----------------------------------------------\n"
                     "ORIGINAL STRATEGY DESCRIPTION: \n{strategy_description}"

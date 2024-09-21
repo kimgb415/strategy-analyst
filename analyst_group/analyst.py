@@ -47,11 +47,8 @@ def create_analyst_chain(llm):
     prompt = ChatPromptTemplate.from_messages(
         [
             (
-                "system",
-                ANALYST_SYSTEM_MESSAGE
-            ),
-            (
                 "user",
+                f"{ANALYST_SYSTEM_MESSAGE}"
                 f"{DASHED_LINE}"
                 "STRATEGY DESCRIPTION: \n{strategy_description}"
                 f"{DASHED_LINE}"

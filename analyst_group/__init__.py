@@ -8,7 +8,7 @@ import functools
 
 ChatModel = functools.partial(ChatNVIDIA, temperature=0.3)
 
-CHAT_MODEL_NAME = "meta/llama-3.1-70b-instruct"
+CHAT_MODEL_NAME = "google/gemma-2-27b-it"
 
 
 engine = create_engine("sqlite:///cache.db")
